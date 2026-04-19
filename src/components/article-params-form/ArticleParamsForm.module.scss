@@ -1,6 +1,12 @@
+.wrapper {
+	position: relative;
+}
+
 .container {
 	position: fixed;
+	top: 0;
 	left: 0;
+	z-index: 1;
 	width: 616px;
 	height: 100%;
 	overflow: scroll;
@@ -21,6 +27,7 @@
 	height: auto;
 	min-height: 100%;
 	padding: 50px 31px;
+	row-gap: 24px;
 	background-color: #ffffff;
 	border-right: 1px solid #000000;
 }
