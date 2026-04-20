@@ -1,7 +1,8 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import clsx from 'clsx';
 import {
 	ArticleStateType,
+	OptionType,
 	backgroundColors,
 	contentWidthArr,
 	fontColors,
@@ -14,6 +15,7 @@ import { RadioGroup } from 'src/ui/radio-group';
 import { Select } from 'src/ui/select';
 import { Separator } from 'src/ui/separator';
 import { Text } from 'src/ui/text';
+import { useCloseOnOutsideClickOrEsc } from './hooks/useCloseOnOutsideClickOrEsc';
 
 import styles from './ArticleParamsForm.module.scss';
 
@@ -26,96 +28,87 @@ export const ArticleParamsForm = ({
 	initialState,
 	onApply,
 }: ArticleParamsFormProps) => {
-	const [isOpen, setIsOpen] = useState(false);
-	const [formState, setFormState] = useState(initialState);
-	const rootRef = useRef<HTMLDivElement>(null);
+	const [isArticleFormOpen, setIsArticleFormOpen] = useState(false);
+	const [articleFormState, setArticleFormState] = useState(initialState);
+	const articleFormRef = useRef<HTMLDivElement>(null);
 
-	useEffect(() => {
-		const handleOutsideClick = (event: MouseEvent) => {
-			const { target } = event;
+	useCloseOnOutsideClickOrEsc({
+		isOpen: isArticleFormOpen,
+		elementRef: articleFormRef,
+		onClose: () => setIsArticleFormOpen(false),
+	});
 
-			if (
-				isOpen &&
-				target instanceof Node &&
-				!rootRef.current?.contains(target)
-			) {
-				setIsOpen(false);
-			}
-		};
-
-		document.addEventListener('mousedown', handleOutsideClick);
-
-		return () => {
-			document.removeEventListener('mousedown', handleOutsideClick);
-		};
-	}, [isOpen]);
-
-	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		onApply(formState);
+	const handleArticleFormToggle = () => {
+		setIsArticleFormOpen((isOpen) => !isOpen);
 	};
 
-	const handleReset = (event: FormEvent<HTMLFormElement>) => {
+	const handleArticleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		setFormState(initialState);
+		onApply(articleFormState);
+	};
+
+	const handleArticleFormReset = (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		setArticleFormState(initialState);
 		onApply(initialState);
 	};
 
+	const handleArticleFormFieldChange =
+		(fieldName: keyof ArticleStateType) => (option: OptionType) => {
+			setArticleFormState((currentArticleState) => ({
+				...currentArticleState,
+				[fieldName]: option,
+			}));
+		};
+
 	return (
-		<div className={styles.wrapper} ref={rootRef}>
-			<ArrowButton isOpen={isOpen} onClick={() => setIsOpen((open) => !open)} />
+		<div className={styles.wrapper} ref={articleFormRef}>
+			<ArrowButton
+				isOpen={isArticleFormOpen}
+				onClick={handleArticleFormToggle}
+			/>
 			<aside
 				className={clsx(styles.container, {
-					[styles.container_open]: isOpen,
+					[styles.container_open]: isArticleFormOpen,
 				})}>
 				<form
 					className={styles.form}
-					onSubmit={handleSubmit}
-					onReset={handleReset}>
+					onSubmit={handleArticleFormSubmit}
+					onReset={handleArticleFormReset}>
 					<Text as='h2' size={31} weight={800} uppercase>
 						Задайте параметры
 					</Text>
 					<Select
 						title='Шрифт'
-						selected={formState.fontFamilyOption}
+						selected={articleFormState.fontFamilyOption}
 						options={fontFamilyOptions}
-						onChange={(option) =>
-							setFormState((state) => ({ ...state, fontFamilyOption: option }))
-						}
+						onChange={handleArticleFormFieldChange('fontFamilyOption')}
 					/>
 					<RadioGroup
 						title='Размер шрифта'
 						name='font-size'
 						options={fontSizeOptions}
-						selected={formState.fontSizeOption}
-						onChange={(option) =>
-							setFormState((state) => ({ ...state, fontSizeOption: option }))
-						}
+						selected={articleFormState.fontSizeOption}
+						onChange={handleArticleFormFieldChange('fontSizeOption')}
 					/>
 					<Select
 						title='Цвет шрифта'
-						selected={formState.fontColor}
+						selected={articleFormState.fontColor}
 						options={fontColors}
-						onChange={(option) =>
-							setFormState((state) => ({ ...state, fontColor: option }))
-						}
+						onChange={handleArticleFormFieldChange('fontColor')}
 					/>
 					<Separator />
 					<Select
 						title='Цвет фона'
-						selected={formState.backgroundColor}
+						selected={articleFormState.backgroundColor}
 						options={backgroundColors}
-						onChange={(option) =>
-							setFormState((state) => ({ ...state, backgroundColor: option }))
-						}
+						onChange={handleArticleFormFieldChange('backgroundColor')}
 					/>
 					<Select
 						title='Ширина контента'
-						selected={formState.contentWidth}
+						selected={articleFormState.contentWidth}
 						options={contentWidthArr}
-						onChange={(option) =>
-							setFormState((state) => ({ ...state, contentWidth: option }))
-						}
+						onChange={handleArticleFormFieldChange('contentWidth')}
 					/>
 					<div className={styles.bottomContainer}>
 						<Button title='Сбросить' htmlType='reset' type='clear' />
